@@ -1,2 +1,2 @@
 # ordering-system
-Ordering system CLI application developed in Java and integrated with C++ and Python.
+Ordering system CLI application using three (3) different programming languages: Java, Python, and C++.
