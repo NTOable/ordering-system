@@ -1,0 +1,22 @@
+
+------>>>>> BILL OUT <<<<<------
+
+Customer ID number 25 ordered: 
+
+---- Meals ----
+Meal 1 -> Fried Chicken W/ Garlic Rice x2 -> PHP 312.5
+---- Drinks ----
+Juice x2 -> PHP 40.0
+---- Desserts ----
+Cheesecake x2 -> PHP 180.0
+---- Side Dishes ----
+Mashed Potato x2 -> PHP 70.0
+---- Bundles ----
+Meal 2, Sprite, Ice Cream, & Buttered Corn  x4 -> PHP 1362.4
+=================================
+
+Total amount due: PHP 1964.90
+Payment: PHP 2000.00
+Change: PHP 35.10
+
+Thank you for ordering!
