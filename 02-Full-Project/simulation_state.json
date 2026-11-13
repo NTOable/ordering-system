@@ -1,0 +1,14 @@
+{
+    "order_id": "TXN-1001",
+    "customer_id": 25,
+    "role": "CUSTOMER",
+    "items": [
+        {"name": "Meal 1 -> Fried Chicken W/ Garlic Rice", "qty": 2, "price": 156.25},
+        {"name": "Juice", "qty": 2, "price": 20.00}
+    ],
+    "subtotal": 352.50,
+    "total_price": 0.00,
+    "payment": 0.00,
+    "change": 0.00,
+    "status": "PENDING"
+}
