@@ -70,6 +70,10 @@ def main():
         print("[Python] Admin session detected. Skipping order simulation.")
         return 0
 
+    if status == "NO_ORDER":
+        print("[Python] No order was placed in this session. Nothing to price.")
+        return 0
+
     if status != "PENDING":
         print(f"[Python] Nothing to process (status: {status}).")
         return 0

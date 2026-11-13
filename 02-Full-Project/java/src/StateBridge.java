@@ -21,14 +21,14 @@ public class StateBridge {
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
-    public static void writeOrder(int customerId,
-                                  String role,
-                                  double subtotal,
-                                  Main.Category meals,
-                                  Main.Category drinks,
-                                  Main.Category desserts,
-                                  Main.Category sides,
-                                  Main.Category bundles) {
+    public static boolean writeOrder(int customerId,
+                                     String role,
+                                     double subtotal,
+                                     Main.Category meals,
+                                     Main.Category drinks,
+                                     Main.Category desserts,
+                                     Main.Category sides,
+                                     Main.Category bundles) {
 
         StringBuilder items = new StringBuilder();
         Main.Category[] categories = {meals, drinks, desserts, sides, bundles};
@@ -66,8 +66,10 @@ public class StateBridge {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(STATE_FILE))) {
             writer.write(json);
             System.out.println("[Java] Order written to " + STATE_FILE + " as " + orderId + ".");
+            return true;
         } catch (IOException exception) {
             System.out.println("[Java] Could not write state file: " + exception.getMessage());
+            return false;
         }
     }
 
@@ -94,25 +96,44 @@ public class StateBridge {
     }
 
     /**
-     * Writes a minimal admin state so the C++ ledger viewer knows what to show.
+     * Writes a minimal state file. Used when the session did not produce an
+     * order (customer exit) or when an admin is viewing the ledger.
      */
-    public static void writeAdminView() {
+    private static void writeMinimalState(String orderId, int customerId, String role, String status) {
         String json = "{\n" +
-                "    \"order_id\": \"ADMIN\",\n" +
-                "    \"customer_id\": 0,\n" +
-                "    \"role\": \"ADMIN\",\n" +
+                "    \"order_id\": \"" + escape(orderId) + "\",\n" +
+                "    \"customer_id\": " + customerId + ",\n" +
+                "    \"role\": \"" + escape(role) + "\",\n" +
                 "    \"items\": [],\n" +
                 "    \"subtotal\": 0.00,\n" +
                 "    \"total_price\": 0.00,\n" +
                 "    \"payment\": 0.00,\n" +
                 "    \"change\": 0.00,\n" +
-                "    \"status\": \"ADMIN_VIEW\"\n" +
+                "    \"status\": \"" + escape(status) + "\"\n" +
                 "}";
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(STATE_FILE))) {
             writer.write(json);
         } catch (IOException exception) {
-            System.out.println("[Java] Could not write admin state: " + exception.getMessage());
+            System.out.println("[Java] Could not write state file: " + exception.getMessage());
         }
+    }
+
+    /**
+     * Records that the customer left without placing an order.
+     *
+     * Without this, a PENDING order left behind by an earlier run would still
+     * be read by Python and printed by C++ (the "exit prints a receipt" bug).
+     */
+    public static void writeNoOrder(String role) {
+        writeMinimalState("NONE", 0, role, "NO_ORDER");
+        System.out.println("[Java] No order placed this session; nothing will be printed.");
+    }
+
+    /**
+     * Writes a minimal admin state so the C++ ledger viewer knows what to show.
+     */
+    public static void writeAdminView() {
+        writeMinimalState("ADMIN", 0, "ADMIN", "ADMIN_VIEW");
     }
 }

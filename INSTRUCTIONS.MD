@@ -169,6 +169,7 @@ This runs only the frontend. It does **not** create
 | `python` opens the Microsoft Store | `run.bat` / `run.sh` auto-detect `py` or `python`; if both fail, install Python 3 and reopen the terminal. |
 | Files not found at runtime | Run from `01-Java-Only/` or `02-Full-Project/`, not the repo root. |
 | Receipt does not print | Place an order before exiting the CLI. `run.bat` now prints a warning when there is no state to render, and Python/C++ report the status they found. |
+| `Customer` → `Exit` still prints a receipt | Fixed: Java now writes `NO_ORDER`, so Python/C++ skip. If you still see one from an older build, delete `simulation_state.json` once to clear the stale `PENDING` state. |
 | Old/duplicate orders appear | `all_receipts.txt` is append-only. Delete its contents or the file to reset. |
 
 ### Reset a demo run

@@ -215,6 +215,11 @@ int main() {
         return 0;
     }
 
+    if (status == "NO_ORDER") {
+        std::cout << "[C++] No order was placed in this session. No receipt to print.\n";
+        return 0;
+    }
+
     if (status != "COMPLETED") {
         std::cout << "[C++] Order is not ready for a receipt (Status: " << status << ").\n";
         return 0;

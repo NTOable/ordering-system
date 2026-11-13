@@ -6,6 +6,7 @@ import java.util.*;
 
 public class Main {
     public static String CURRENT_ROLE = "CUSTOMER";
+    public static boolean ORDER_SUBMITTED = false;
 
     public static void main(String[] args) throws IOException {
         boolean session = false;
@@ -158,6 +159,9 @@ public class Main {
         if (CURRENT_ROLE.equals("ADMIN")) {
             StateBridge.writeAdminView();
             System.out.println("[Java] Admin session saved. C++ will print the master ledger.");
+        } else if (!ORDER_SUBMITTED) {
+            // No order was placed, so clear any pending order from a previous run.
+            StateBridge.writeNoOrder(CURRENT_ROLE);
         }
         scanner.close();
     }
@@ -249,8 +253,13 @@ public class Main {
             writer.write("\n=================================\n");
 
             writer.close();
-            StateBridge.writeOrder(ID, CURRENT_ROLE, totalAmount, Meals, Drinks, Desserts, SideDishes, Bundles);
-            System.out.println("Order received. \n");
+            ORDER_SUBMITTED = StateBridge.writeOrder(ID, CURRENT_ROLE, totalAmount,
+                    Meals, Drinks, Desserts, SideDishes, Bundles);
+            if (ORDER_SUBMITTED) {
+                System.out.println("Order received. \n");
+            } else {
+                System.out.println("The order was not saved. Please try again.");
+            }
         } catch (IOException exception) {
             System.out.println("Could not save the order: " + exception.getMessage());
         }

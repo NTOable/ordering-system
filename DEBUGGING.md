@@ -4,7 +4,7 @@ Date: 2026-11-13
 Last re-test: 2026-11-13, after the `PATH` reorder
 Scope: `02-Full-Project` (Java + Python + C++) and `01-Java-Only`
 
-> **Post-polish status (2026-11-13):** the Full Project defects in §4 (piped stdin) and §8 (currency formatting, Bundle 2 label) were fixed in the polish pass — see `POLISHING.md`. §3 (Python PATH) was resolved separately. §5 (Java-Only) is unchanged by design.
+> **Post-polish status (2026-11-13):** the Full Project defects in §4 (piped stdin) and §8 (currency formatting, Bundle 2 label) were fixed in the polish pass — see `POLISHING.md`. §3 (Python PATH) was resolved separately. §5 (Java-Only) is unchanged by design. A follow-up on 2026-11-14 fixed a customer exit without an order printing a stale receipt (§8 status gating, P-24–P-26).
 
 ## TL;DR
 
@@ -290,4 +290,4 @@ Expected after the full sequence: `"status": "ARCHIVED"`, a new ledger row, and 
 - **Currency formatting in C++:** ~~`receipt.cpp` uses default `std::cout` precision, so PHP 352.50 prints as `PHP 352.5`.~~ **Fixed in polish:** totals now print with two decimals (`PHP 352.50`).
 - **Bundle 2 name is inconsistent:** ~~`Main.java:469` sets `product = "Meal 2, Sprite, Ice Cream, & Buttered Corn "` — missing the `Bundle 2 ->` prefix (and it has a trailing space), unlike Bundles 1 and 3.~~ **Fixed in polish:** now `Bundle 2 -> Meal 2, Sprite, Ice Cream, & Buttered Corn`.
 - **Append-only files:** `all_receipts.txt` and `Customer_Orders.txt` accumulate rows across runs. Delete them (or their contents) to reset a demo.
-- **Status gating:** if `simulation_state.json` is left `ARCHIVED` or `COMPLETED`, re-running Python/C++ without a fresh Java order does nothing (`[Python] Nothing to process` / C++ "not ready for a receipt").
+- **Status gating:** if `simulation_state.json` is left `ARCHIVED` or `COMPLETED`, re-running Python/C++ without a fresh Java order does nothing (`[Python] Nothing to process` / C++ "not ready for a receipt"). `NO_ORDER` means the customer left without ordering, and both stages skip it. **Fixed 2026-11-14:** that no-order path now writes `NO_ORDER`, so a stale `PENDING` order can no longer be priced or printed (see `POLISHING.md` P-24–P-26).

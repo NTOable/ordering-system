@@ -3,12 +3,21 @@
     "customer_id": 25,
     "role": "CUSTOMER",
     "items": [
-        {"name": "Meal 1 -> Fried Chicken W/ Garlic Rice", "qty": 2, "price": 156.25},
-        {"name": "Juice", "qty": 2, "price": 20.00}
+        {
+            "name": "Meal 1 -> Fried Chicken W/ Garlic Rice",
+            "qty": 2,
+            "price": 156.25
+        },
+        {
+            "name": "Juice",
+            "qty": 2,
+            "price": 20.0
+        }
     ],
-    "subtotal": 352.50,
-    "total_price": 0.00,
-    "payment": 0.00,
-    "change": 0.00,
-    "status": "PENDING"
+    "subtotal": 352.5,
+    "total_price": 352.5,
+    "payment": 0.0,
+    "change": 0.0,
+    "status": "ARCHIVED",
+    "summary": "Meal 1 -> Fried Chicken W/ Garlic Rice x2; Juice x2"
 }

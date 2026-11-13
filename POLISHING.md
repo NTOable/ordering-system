@@ -1,6 +1,6 @@
 # POLISHING — Full Project Change Log
 
-Date: 2026-11-13
+Date: 2026-11-13 (initial polish pass) · 2026-11-14 (no-order bug fix)
 Scope: `02-Full-Project` only (`java/`, `python/`, `cpp/`, runner scripts, docs)
 Baseline: a pre-change snapshot of `02-Full-Project` was copied to a temp folder before any edit. `01-Java-Only` and all repository data files were left untouched.
 
@@ -35,6 +35,10 @@ Goal: fix the defects recorded in `DEBUGGING.md` and harden the pipeline without
 | P-21 | Docs | This `POLISHING.md` log added |
 | P-22 | Docs | `DEBUGGING.md` annotated with post-polish status |
 | P-23 | Verification | `run.sh` executed via Git Bash; `INSTRUCTIONS.MD` notes Git Bash support |
+| P-24 | Java | Customer exit with no order writes `NO_ORDER`, clearing stale `PENDING` state |
+| P-25 | Python | `NO_ORDER` sessions are skipped with a clear message |
+| P-26 | C++ | `NO_ORDER` sessions print a friendly message and exit `0` |
+| P-27 | Verification + docs | Stale-`PENDING` regression tests, matrix, and troubleshooting note |
 
 ---
 
@@ -387,6 +391,98 @@ This file.
 
 ---
 
+## Bug fix, 2026-11-14 — exiting without an order printed a stale receipt
+
+**Report:** *"I chose Customer and Exited, it still prints a ticket."*
+
+### Cause
+
+Java only wrote `simulation_state.json` in two places: `writeandsave` (a real order) and the admin exit path. Selecting `[1] Customer` and then `[X] Exit` wrote **nothing**, so a `PENDING` order left by a previous run was still read by Python (priced and marked `COMPLETED`) and printed by C++. C++ then archived it, which is why the same `TXN-1001` row could appear twice in `all_receipts.txt`.
+
+### P-24 — Java writes `NO_ORDER` on a customer exit with no order
+
+`java/src/StateBridge.java`:
+
+- `writeOrder(...)` now returns `boolean` (the old `void` caller could not tell whether the state file was written).
+- New `writeMinimalState(orderId, customerId, role, status)` holds the shared minimal JSON; `writeAdminView()` now reuses it.
+- New `writeNoOrder(role)` writes:
+
+```json
+{
+    "order_id": "NONE",
+    "customer_id": 0,
+    "role": "CUSTOMER",
+    "items": [],
+    "subtotal": 0.00,
+    "total_price": 0.00,
+    "payment": 0.00,
+    "change": 0.00,
+    "status": "NO_ORDER"
+}
+```
+
+`java/src/Main.java`:
+
+- Added `public static boolean ORDER_SUBMITTED = false;`.
+- `writeandsave` sets it from the `writeOrder` result and only prints `Order received.` on success.
+
+```java
+ORDER_SUBMITTED = StateBridge.writeOrder(ID, CURRENT_ROLE, totalAmount,
+        Meals, Drinks, Desserts, SideDishes, Bundles);
+if (ORDER_SUBMITTED) {
+    System.out.println("Order received. \n");
+} else {
+    System.out.println("The order was not saved. Please try again.");
+}
+```
+
+- The exit block now distinguishes the three cases:
+
+```java
+if (CURRENT_ROLE.equals("ADMIN")) {
+    StateBridge.writeAdminView();
+} else if (!ORDER_SUBMITTED) {
+    // No order was placed, so clear any pending order from a previous run.
+    StateBridge.writeNoOrder(CURRENT_ROLE);
+}
+```
+
+A real order is **left as `PENDING`** for Python. Only a session that never submitted one is marked `NO_ORDER`.
+
+### P-25 — Python skips `NO_ORDER`
+
+`python/engine.py`:
+
+```python
+if status == "NO_ORDER":
+    print("[Python] No order was placed in this session. Nothing to price.")
+    return 0
+```
+
+### P-26 — C++ handles `NO_ORDER`
+
+`cpp/receipt.cpp`:
+
+```cpp
+if (status == "NO_ORDER") {
+    std::cout << "[C++] No order was placed in this session. No receipt to print.\n";
+    return 0;
+}
+```
+
+Exit code `0`, so the runner does not print the "No receipt was rendered" warning for a legitimate no-order session.
+
+### P-27 — Tests and docs
+
+- Added the stale-`PENDING` regression cases to the matrix below.
+- Added a troubleshooting row to `INSTRUCTIONS.MD`.
+- `DEBUGGING.md` §8 now notes the status-gating behavior.
+
+**Note on existing data:** the repository's `all_receipts.txt` and `simulation_state.json` still contain the two `TXN-1001` rows from the pre-fix run. They were left untouched (the app only appends). The fix prevents any new stale receipts; clearing the old rows is a separate manual decision.
+
+
+---
+
 ## Verification matrix
 
 All tests ran in temporary copies of `02-Full-Project`; repository data files were not modified.
@@ -408,6 +504,12 @@ All tests ran in temporary copies of `02-Full-Project`; repository data files we
 | `run.bat` with an order | Exit 0; `Using Python: py -3`; receipt; `ARCHIVED` |
 | `run.bat` with no order | Warning + `Done.`, exit 0 |
 | `run.sh` via Git Bash | Exit 0 both paths; `Using Python: python3`; receipt `PHP 312.50`; state `ARCHIVED` |
+| Stale `PENDING` + Customer → Exit (Java/Python/C++) | State `NO_ORDER`; no receipt; ledger unchanged |
+| `run.bat` stale `PENDING` + Customer → Exit | `[C++] No order was placed...`; ledger unchanged; exit 0 |
+| `run.sh` (Git Bash) stale `PENDING` + Customer → Exit | Same as above; `Using Python: python3`; exit 0 |
+| Missing state + Customer → Exit | `NO_ORDER` written; Python/C++ skip; exit 0 |
+| Real order after the fix | Java `PENDING` → Python `COMPLETED` → C++ `ARCHIVED`; receipt PHP 312.50 |
+| Admin flow after the fix | `ADMIN_VIEW`; Python skips; C++ prints the ledger |
 
 ---
 
@@ -438,3 +540,12 @@ run.bat < input.txt
 ```
 
 Expected: `[Python] ... priced at PHP 312.50`, a receipt with `PHP 312.50`, and final state `ARCHIVED`.
+
+To check the no-order fix, run the same pipeline with only `Customer` → `Exit`:
+
+```bat
+(echo 1& echo X) > input.txt
+run.bat < input.txt
+```
+
+Expected: `[Python] No order was placed in this session...`, `[C++] No order was placed in this session...`, **no receipt**, and final state `NO_ORDER`.
